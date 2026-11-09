@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>日本旅遊快速記帳本</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     .modal-active { display: flex !important; }
@@ -64,7 +63,7 @@
 
         <!-- Category Selector -->
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">分類</label>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">消費分類</label>
           <div class="grid grid-cols-4 gap-2" id="categoryGrid"></div>
         </div>
 
@@ -90,18 +89,12 @@
         </button>
       </section>
 
-      <!-- Actions for Export -->
+      <!-- Actions for Copy -->
       <section class="flex gap-2">
-        <button onclick="copyTSV()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-2 rounded-lg flex items-center justify-center gap-1 transition shadow">
-          📋 複製 Google 試算表 (TSV)
+        <button onclick="copyTSV()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition shadow">
+          📋 複製 Google 試算表格式 (TSV)
         </button>
-        <button onclick="exportExcel()" class="bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-medium py-2 px-2.5 rounded-lg transition shadow">
-          📊 Excel (.xlsx)
-        </button>
-        <button onclick="exportCSV()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-medium py-2 px-2.5 rounded-lg transition shadow">
-          ⬇️ CSV
-        </button>
-        <button onclick="clearAll()" class="bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-medium py-2 px-2.5 rounded-lg transition">
+        <button onclick="clearAll()" class="bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-medium py-2 px-3 rounded-lg transition">
           清空
         </button>
       </section>
@@ -131,8 +124,8 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">選擇或拍攝發票照片</label>
-        <input type="file" id="receiptImage" accept="image/*" capture="environment" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+        <label class="block text-xs font-semibold text-slate-600 mb-1">選擇照片或拍照</label>
+        <input type="file" id="receiptImage" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
       </div>
 
       <!-- Preview Image -->
@@ -144,7 +137,7 @@
       </div>
 
       <button id="analyzeBtn" onclick="analyzeReceipt()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-lg text-sm transition flex items-center justify-center gap-2">
-        <span>開始 AI 辨識與翻譯</span>
+        <span>開始 AI 辨識與日文翻譯</span>
       </button>
 
       <!-- Result Container -->
@@ -157,7 +150,7 @@
             <input type="number" id="visionAmount" class="w-full p-1 font-bold border rounded bg-white">
           </div>
           <div>
-            <span class="text-slate-500">建議分類:</span>
+            <span class="text-slate-500">消費分類:</span>
             <input type="text" id="visionCategory" class="w-full p-1 border rounded bg-white">
           </div>
         </div>
@@ -175,7 +168,7 @@
         <div id="itemsContainer" class="hidden pt-2 border-t border-purple-200">
           <div class="flex justify-between items-center mb-1">
             <span class="font-bold text-slate-700">🧾 發票商品明細拆單：</span>
-            <button onclick="importAllItems()" class="bg-purple-700 hover:bg-purple-800 text-white text-[10px] px-2 py-1 rounded">一鍵匯入全部明细</button>
+            <button onclick="importAllItems()" class="bg-purple-700 hover:bg-purple-800 text-white text-[10px] px-2 py-1 rounded">一鍵匯入全部明細</button>
           </div>
           <div id="itemsList" class="space-y-1 max-h-36 overflow-y-auto"></div>
         </div>
@@ -200,7 +193,7 @@
 
       <div class="grid grid-cols-2 gap-2">
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">分類</label>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">消費分類</label>
           <select id="editCategory" class="w-full p-2 border rounded-lg text-xs bg-white"></select>
         </div>
         <div>
@@ -540,7 +533,7 @@
         alert('辨識失敗: ' + err.message + '\n請檢查 API Key 或照片是否清楚');
       } finally {
         btn.disabled = false;
-        btn.innerText = '開始 AI 辨識與翻譯';
+        btn.innerText = '開始 AI 辨識與日文翻譯';
       }
     }
 
@@ -601,38 +594,6 @@
       navigator.clipboard.writeText(tsv).then(() => {
         alert('已複製表格內容！開啟 Google 試算表直接貼上 (Ctrl+V) 即可。');
       });
-    }
-
-    function exportExcel() {
-      if (records.length === 0) return alert('目前沒有紀錄可匯出');
-      const data = records.map(r => ({
-        '日期': r.date,
-        '時間': r.time,
-        '分類': r.category,
-        '日幣 (JPY)': r.jpy,
-        '台幣 (TWD)': Math.round(r.jpy * rate),
-        '支付方式': r.payment,
-        '備註': r.note
-      }));
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "日本消費明細");
-      XLSX.writeFile(wb, `日本旅遊記帳_${new Date().toISOString().slice(0,10)}.xlsx`);
-    }
-
-    function exportCSV() {
-      if (records.length === 0) return alert('目前沒有紀錄可匯出');
-      let csv = '﻿日期,時間,分類,日幣(JPY),台幣(TWD),支付方式,備註
-';
-      records.forEach(r => {
-        csv += `"${r.date}","${r.time}","${r.category}",${r.jpy},${Math.round(r.jpy * rate)},"${r.payment}","${r.note}"
-`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `japan_expenses_${new Date().toISOString().slice(0,10)}.csv`;
-      link.click();
     }
 
     function clearAll() {
