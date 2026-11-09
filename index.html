@@ -102,6 +102,68 @@
       </div>
     </section>
 
+    <!-- Initial Quick Entry Section (Top of Page) -->
+    <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h2 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <span>⚡</span> 快速記帳
+        </h2>
+        <button id="btnScanAiTop" class="text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors">
+          <i class="fa-solid fa-camera"></i> AI 辨識收據
+        </button>
+      </div>
+
+      <form id="quickExpenseForm" class="space-y-3">
+        <!-- Amount & Merchant Grid -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">日圓金額 (JPY) *</label>
+            <div class="relative">
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-extrabold text-slate-400 text-sm">¥</span>
+              <input type="number" id="quickAmount" required placeholder="0" step="1" min="0"
+                class="w-full pl-7 pr-2 py-2 bg-slate-50 border border-slate-200 rounded-xl font-black text-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">店家 / 項目 *</label>
+            <input type="text" id="quickMerchant" required placeholder="例: 7-Eleven"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all">
+          </div>
+        </div>
+
+        <!-- Category & Date Grid -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">類別</label>
+            <select id="quickCategory" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all">
+              <option value="餐飲">🍜 餐飲</option>
+              <option value="購物">🛍️ 購物</option>
+              <option value="交通">🚃 交通</option>
+              <option value="住宿">🏨 住宿</option>
+              <option value="娛樂">🎟️ 娛樂</option>
+              <option value="其他">📦 其他</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">日期</label>
+            <input type="date" id="quickDate" required
+              class="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all">
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <input type="text" id="quickNotes" placeholder="中文備註 (選填)..."
+            class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all">
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl shadow-md active:scale-[0.99] transition-all text-sm flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-plus text-xs"></i> 儲存此筆記帳
+        </button>
+      </form>
+    </section>
+
     <!-- Category Filter Bar -->
     <section class="flex gap-2 overflow-x-auto no-scrollbar py-1">
       <button class="cat-filter-btn active bg-slate-900 text-white text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap shadow-sm transition-all" data-cat="all">全部</button>
@@ -113,19 +175,25 @@
       <button class="cat-filter-btn bg-white text-slate-600 hover:bg-slate-100 text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap border border-slate-200 transition-all" data-cat="其他">📦 其他</button>
     </section>
 
-    <!-- Expense List Header & CSV Export -->
-    <section class="flex justify-between items-center pt-2">
+    <!-- Expense List Header & Sheet Export Tools -->
+    <section class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-1">
       <h2 class="font-bold text-slate-700 text-sm tracking-wide flex items-center gap-1.5">
         <i class="fa-solid fa-list-ul text-red-500"></i> 消費明細
         <span id="recordCount" class="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-normal">0 筆</span>
       </h2>
-      <button id="btnExportCsv" class="text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors">
-        <i class="fa-solid fa-file-excel"></i> 匯出 CSV (Sheet)
-      </button>
+      <div class="flex items-center gap-1.5 w-full sm:w-auto">
+        <!-- New Copy to Sheet Button -->
+        <button id="btnCopySheet" class="flex-1 sm:flex-none text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors">
+          <i class="fa-regular fa-copy"></i> 複製到試算表
+        </button>
+        <button id="btnExportCsv" class="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2 py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors" title="下載 CSV">
+          <i class="fa-solid fa-file-csv"></i> CSV
+        </button>
+      </div>
     </section>
 
     <!-- Expense Items List Container -->
-    <section id="expenseList" class="space-y-2.5 min-h-[300px]">
+    <section id="expenseList" class="space-y-2.5 min-h-[250px]">
       <!-- Expense Items will be rendered here dynamically -->
     </section>
 
@@ -166,13 +234,13 @@
     </div>
   </div>
 
-  <!-- 2. Add / Edit Expense Modal -->
+  <!-- 2. Edit Expense Modal -->
   <div id="expenseModal" class="fixed inset-0 modal-backdrop z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
       
       <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
         <h3 id="modalTitle" class="font-bold text-slate-800 text-base flex items-center gap-2">
-          <span>✏️</span> 新增消費紀錄
+          <span>✏️</span> 編輯消費紀錄
         </h3>
         <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 p-1">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -236,7 +304,7 @@
             刪除
           </button>
           <button type="submit" class="flex-1 bg-slate-900 text-white font-bold py-3 px-4 rounded-xl shadow-md active:scale-[0.98] transition-all">
-            儲存紀錄
+            儲存變更
           </button>
         </div>
 
@@ -317,10 +385,19 @@
     const recordCountEl = document.getElementById('recordCount');
     const expenseListEl = document.getElementById('expenseList');
 
+    const btnScanAiTop = document.getElementById('btnScanAiTop');
     const btnScanAi = document.getElementById('btnScanAi');
     const btnAddManual = document.getElementById('btnAddManual');
     const cameraInput = document.getElementById('cameraInput');
     const btnExportCsv = document.getElementById('btnExportCsv');
+    const btnCopySheet = document.getElementById('btnCopySheet');
+
+    const quickExpenseForm = document.getElementById('quickExpenseForm');
+    const quickAmount = document.getElementById('quickAmount');
+    const quickMerchant = document.getElementById('quickMerchant');
+    const quickCategory = document.getElementById('quickCategory');
+    const quickDate = document.getElementById('quickDate');
+    const quickNotes = document.getElementById('quickNotes');
 
     const aiScanModal = document.getElementById('aiScanModal');
     const aiProgressStatus = document.getElementById('aiProgressStatus');
@@ -353,8 +430,9 @@
       loadRecords();
       renderApp();
       
-      // Set default input date to today (Japan Time / Local Time)
-      inputDate.value = new Date().toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split('T')[0];
+      inputDate.value = todayStr;
+      quickDate.value = todayStr;
     });
 
     // --- STORAGE HANDLERS ---
@@ -382,7 +460,7 @@
       localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
       loadSettings();
       renderApp();
-      showToast('⚙️ 設定已儲存', 'success');
+      showToast('⚙️ 設定已儲存');
       settingsModal.classList.add('hidden');
     }
 
@@ -400,6 +478,37 @@
       renderApp();
     }
 
+    // --- QUICK EXPENSE FORM (HOME PAGE INITIAL INPUT) ---
+    quickExpenseForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const amount = parseFloat(quickAmount.value) || 0;
+      const merchant = quickMerchant.value.trim();
+      const category = quickCategory.value;
+      const date = quickDate.value;
+      const notes = quickNotes.value.trim();
+
+      const newRecord = {
+        id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        amount,
+        merchant,
+        category,
+        date,
+        notes,
+        createdAt: Date.now()
+      };
+
+      records.push(newRecord);
+      saveRecords();
+
+      // Reset Quick Input
+      quickAmount.value = '';
+      quickMerchant.value = '';
+      quickNotes.value = '';
+      quickAmount.focus();
+
+      showToast('✅ 已成功記帳一筆！');
+    });
+
     // --- RENDER FUNCTIONS ---
     function renderApp() {
       const todayStr = new Date().toISOString().split('T')[0];
@@ -407,13 +516,11 @@
       let grandTotalJpy = 0;
       let todayTotalJpy = 0;
 
-      // Filter records by category
       const filteredRecords = records.filter(r => {
         if (currentCategoryFilter === 'all') return true;
         return r.category === currentCategoryFilter;
       });
 
-      // Calculate Totals
       records.forEach(r => {
         const amt = Number(r.amount) || 0;
         grandTotalJpy += amt;
@@ -422,28 +529,25 @@
         }
       });
 
-      // Update Header Cards
       totalJpyEl.textContent = grandTotalJpy.toLocaleString();
       totalTwdEl.textContent = Math.round(grandTotalJpy * settings.exchangeRate).toLocaleString();
       todayJpyEl.textContent = todayTotalJpy.toLocaleString();
       todayTwdEl.textContent = Math.round(todayTotalJpy * settings.exchangeRate).toLocaleString();
       recordCountEl.textContent = `${filteredRecords.length} 筆`;
 
-      // Render List
       expenseListEl.innerHTML = '';
 
       if (filteredRecords.length === 0) {
         expenseListEl.innerHTML = `
-          <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
-            <span class="text-4xl block mb-2">💴</span>
+          <div class="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-200">
+            <span class="text-3xl block mb-2">💴</span>
             <p class="text-sm font-semibold text-slate-600">尚無消費紀錄</p>
-            <p class="text-xs text-slate-400 mt-1">點擊下方「AI 辨識收據」或「手動記帳」新增</p>
+            <p class="text-xs text-slate-400 mt-1">上方輸入金額即可快速完成記帳</p>
           </div>
         `;
         return;
       }
 
-      // Sort records by date descending
       const sorted = [...filteredRecords].sort((a, b) => new Date(b.date) - new Date(a.date) || b.createdAt - a.createdAt);
 
       sorted.forEach(item => {
@@ -500,20 +604,11 @@
       return map[cat] || '🏷️';
     }
 
-    // --- MODAL & FORM HANDLERS ---
+    // --- EDIT MODAL HANDLERS ---
     btnAddManual.addEventListener('click', () => {
-      openAddModal();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      quickAmount.focus();
     });
-
-    function openAddModal() {
-      modalTitle.innerHTML = '<span>✨</span> 新增消費紀錄';
-      editRecordIdInput.value = '';
-      expenseForm.reset();
-      inputDate.value = new Date().toISOString().split('T')[0];
-      inputTwdPreview.textContent = '0';
-      btnDeleteRecord.classList.add('hidden');
-      expenseModal.classList.remove('hidden');
-    }
 
     function openEditModal(id) {
       const record = records.find(r => r.id === id);
@@ -541,7 +636,6 @@
       inputTwdPreview.textContent = Math.round(val * settings.exchangeRate).toLocaleString();
     }
 
-    // Save Expense Form (Add or Edit)
     expenseForm.addEventListener('submit', (e) => {
       e.preventDefault();
 
@@ -553,32 +647,17 @@
       const notes = inputNotes.value.trim();
 
       if (id) {
-        // Edit existing
         const index = records.findIndex(r => r.id === id);
         if (index !== -1) {
           records[index] = { ...records[index], amount, merchant, category, date, notes };
           showToast('✏️ 紀錄已成功更新');
         }
-      } else {
-        // Create new
-        const newRecord = {
-          id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-          amount,
-          merchant,
-          category,
-          date,
-          notes,
-          createdAt: Date.now()
-        };
-        records.push(newRecord);
-        showToast('✅ 成功新增消費紀錄');
       }
 
       saveRecords();
       expenseModal.classList.add('hidden');
     });
 
-    // Delete Record
     btnDeleteRecord.addEventListener('click', () => {
       const id = editRecordIdInput.value;
       if (!id) return;
@@ -622,54 +701,53 @@
     });
 
     // --- GEMINI AI CAMERA RECEIPT OCR & TRANSLATION ---
-    btnScanAi.addEventListener('click', () => {
+    const triggerScan = () => {
       if (!settings.apiKey) {
-        showToast('⚠️ 請先點擊右上角⚙️設定 Gemini API Key', 'error');
+        showToast('⚠️ 請先點擊右上角⚙️設定 Gemini API Key');
         btnSettings.click();
         return;
       }
       cameraInput.click();
-    });
+    };
+
+    btnScanAi.addEventListener('click', triggerScan);
+    btnScanAiTop.addEventListener('click', triggerScan);
 
     cameraInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      // Show spinner modal
       aiProgressStatus.textContent = '圖片壓縮處理中...';
       aiScanModal.classList.remove('hidden');
 
       try {
-        // Convert & compress image to base64
         const base64Data = await resizeAndBase64(file);
         
-        aiProgressStatus.textContent = 'AI 解析中 (Gemini)...';
-        const aiResult = await analyzeReceiptWithGemini(base64Data, file.type || 'image/jpeg');
+        aiProgressStatus.textContent = 'AI 解析中 (Gemini 2.5)...';
+        const aiResult = await analyzeReceiptWithGemini(base64Data);
 
-        // Close loading modal
         aiScanModal.classList.add('hidden');
 
-        // Auto populate modal for review/confirmation
-        openAddModal();
-        modalTitle.innerHTML = '<span>🤖</span> AI 解析完成 (請確認)';
-        inputAmount.value = aiResult.amount || '';
-        inputMerchant.value = aiResult.merchant || '日本店家';
-        inputCategory.value = aiResult.category || '餐飲';
-        if (aiResult.date) inputDate.value = aiResult.date;
-        inputNotes.value = aiResult.translated_items || '';
-        updateTwdPreview();
+        // Populate to quick form or edit modal
+        quickAmount.value = aiResult.amount || '';
+        quickMerchant.value = aiResult.merchant || '日本店家';
+        if (aiResult.category) quickCategory.value = aiResult.category;
+        if (aiResult.date) quickDate.value = aiResult.date;
+        quickNotes.value = aiResult.translated_items || '';
 
-        showToast('✨ 收據辨識完成，請確認後儲存');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        quickAmount.focus();
+
+        showToast('✨ 收據辨識完成，請確認金額後儲存！');
       } catch (err) {
         aiScanModal.classList.add('hidden');
         console.error(err);
         alert('AI 解析失敗: ' + err.message);
       } finally {
-        cameraInput.value = ''; // Reset file input
+        cameraInput.value = '';
       }
     });
 
-    // Compress image to speed up API transfer
     function resizeAndBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -679,7 +757,7 @@
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            const maxDim = 1200; // Resize large photos
+            const maxDim = 1200;
 
             if (width > maxDim || height > maxDim) {
               if (width > height) {
@@ -687,7 +765,6 @@
                 width = maxDim;
               } else {
                 width = Math.round((width * maxDim) / height);
-                maxDim;
                 height = maxDim;
               }
             }
@@ -697,7 +774,6 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Get Base64 String without data prefix
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             resolve(dataUrl.split(',')[1]);
           };
@@ -709,16 +785,17 @@
       });
     }
 
-    // Call Gemini 1.5 Flash API
-    async function analyzeReceiptWithGemini(base64Image, mimeType) {
+    // Call Fixed Gemini 2.5 Flash API
+    async function analyzeReceiptWithGemini(base64Image) {
       const apiKey = settings.apiKey;
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      // UPDATED TO USE GEMINI 2.5 FLASH API ENDPOINT
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
       const promptText = `請細心分析這張日本收據或發票圖像，並以嚴格的 JSON 格式回答：
 {
   "date": "YYYY-MM-DD 格式 (若無法判讀則傳回今日日期)",
   "merchant": "店家名稱 (例如 7-Eleven, Lawson, 敘敘苑, Suica 儲值等)",
-  "amount": 純數字總消費金額JPY (注意標示之含稅總額「税込金額/合計」)，不要加逗點或貨幣符號,
+  "amount": 純數字總消費金額JPY (注意標示之含稅總額「税込金額/合計」)，不要加逗號或貨幣符號,
   "category": "分類名稱，只能從這六個選擇：餐飲 / 購物 / 交通 / 住宿 / 娛樂 / 其他",
   "translated_items": "條列出主要購買商品之【日文原文 -> 繁體中文翻譯】，例如：\n• おにぎり -> 明太子飯糰 x1\n• 緑茶 -> 綠茶 500ml x1"
 }`;
@@ -763,6 +840,48 @@
       return JSON.parse(textResponse);
     }
 
+    // --- COPY TO GOOGLE SHEETS (TSV FORMAT) ---
+    btnCopySheet.addEventListener('click', () => {
+      if (records.length === 0) {
+        showToast('⚠️ 目前沒有任何記帳紀錄可複製');
+        return;
+      }
+
+      // Format as Tab-Separated Values (TSV) for seamless paste into Google Sheets
+      let tsvLines = ["日期\t店家/項目\t日圓金額(JPY)\t估算台幣(TWD)\t類別\t備註明細(中文翻譯)"];
+
+      // Sort chronological
+      const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      sorted.forEach(r => {
+        const twd = Math.round(r.amount * settings.exchangeRate);
+        const cleanMerchant = (r.merchant || '').replace(/[\t\r\n]/g, ' ');
+        const cleanNotes = (r.notes || '').replace(/[\t\r\n]/g, ' ');
+        tsvLines.push(`${r.date}\t${cleanMerchant}\t${r.amount}\t${twd}\t${r.category}\t${cleanNotes}`);
+      });
+
+      const copyText = tsvLines.join('\n');
+
+      // Use document.execCommand fallback for iframe / mobile security compatibility
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = copyText;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast('📋 已複製！請至 Google 試算表直接貼上 (Ctrl+V)');
+        } else {
+          showToast('⚠️ 複製失敗，請重試');
+        }
+      } catch (err) {
+        showToast('⚠️ 瀏覽器不支援一鍵複製');
+      } finally {
+        document.body.removeChild(tempTextArea);
+      }
+    });
+
     // --- CSV EXPORT FOR GOOGLE SHEETS ---
     btnExportCsv.addEventListener('click', () => {
       if (records.length === 0) {
@@ -770,7 +889,6 @@
         return;
       }
 
-      // Add UTF-8 BOM so Excel/Google Sheets correctly displays Traditional Chinese
       let csvContent = "\uFEFF";
       csvContent += "ID,日期,店家/項目,日圓金額 (JPY),估算台幣 (TWD),類別,備註明細 (中日文翻譯)\n";
 
@@ -791,11 +909,11 @@
       a.click();
       document.body.removeChild(a);
 
-      showToast('📥 已成功匯出 CSV 檔案！可直接載入 Google 試算表');
+      showToast('📥 已成功匯出 CSV 檔案！');
     });
 
     // --- UTILS ---
-    function showToast(msg, type = 'info') {
+    function showToast(msg) {
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toastMsg');
       toastMsg.textContent = msg;
@@ -813,7 +931,7 @@
       if (!str) return '';
       return str.replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
-                .replace(/>/g, "& Mik;")
+                .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
     }
