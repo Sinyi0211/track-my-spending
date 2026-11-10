@@ -3,680 +3,468 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>japan_expense_tracker_v2</title>
-    <!-- Tailwind CSS CDN -->
+    <title>日本旅遊快速記帳助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            background-color: #F8F6F0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #333333;
-        }
-        /* Mobile card styling matching screenshots */
-        .card-container {
-            background-color: #ffffff;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px -2px rgba(0, 0, 0, 0.03), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
-        }
-        /* Pastel quick amount buttons */
-        .quick-btn {
-            background-color: #F9EAEA;
-            color: #A06464;
-            border: 1px solid #F0D4D4;
-            transition: all 0.15s ease-in-out;
-        }
-        .quick-btn:active {
-            transform: scale(0.95);
-            background-color: #EACFCF;
-        }
-        /* Soft custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #CBD5E1;
-            border-radius: 9999px;
+        .clear-btn {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
         }
     </style>
 </head>
-<body class="min-h-screen pb-12 flex justify-center selection:bg-rose-100">
-
-    <!-- Mobile Viewport Container -->
-    <div class="w-full max-w-md px-4 py-4 flex flex-col gap-4">
-
-        <!-- Header Bar -->
-        <header class="bg-[#6B7B8C] text-white rounded-2xl px-5 py-4 flex justify-between items-center shadow-md">
-            <div class="flex items-center gap-2 font-bold text-lg tracking-wide">
-                <span>✈️</span>
-                <span>日本旅遊記帳</span>
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-md flex flex-col">
+        <!-- 頂部標題與設定 -->
+        <header class="bg-red-600 text-white p-4 sticky top-0 z-10 shadow">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-plane-departure"></i> 日本旅遊記帳
+                </h1>
+                <button id="toggleSettingsBtn" class="text-white hover:text-red-200">
+                    <i class="fa-solid fa-gear text-xl"></i>
+                </button>
             </div>
-            <button id="openSettingsBtn" class="p-2 text-slate-200 hover:text-white transition" title="設定 Gemini API 與 匯率">
-                <i class="fa-solid fa-gear text-xl"></i>
-            </button>
+            
+            <!-- 設定面板 -->
+            <div id="settingsPanel" class="hidden mt-3 pt-3 border-t border-red-500/50 space-y-3">
+                <div>
+                    <label class="block text-xs text-red-100 mb-1">Gemini API Key (AI 辨識必填)</label>
+                    <input type="password" id="apiKeyInput" placeholder="貼上 AI Studio API Key" 
+                           class="w-full text-slate-800 px-3 py-1.5 rounded text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-red-100 mb-1">匯率設定 (1 JPY = ? TWD)</label>
+                    <input type="number" step="0.001" id="exchangeRateInput" value="0.21" 
+                           class="w-full text-slate-800 px-3 py-1.5 rounded text-sm outline-none">
+                </div>
+                <div class="text-xs text-red-100">Key 與匯率將安全儲存在本機瀏覽器。</div>
+            </div>
         </header>
 
-        <!-- AI Receipt Scanner Section -->
-        <section class="card-container p-4 border-2 border-dashed border-[#B0C0D0] flex flex-col gap-3">
-            <div class="flex items-center justify-between text-[#4A5568] font-semibold text-sm">
-                <div class="flex items-center gap-2">
-                    <span class="text-base">🪄</span>
-                    <span>AI 收據辨識 (Gemini 3.8 Flash)</span>
+        <main class="p-4 space-y-4 flex-1">
+            <!-- AI 收據辨識區 -->
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i> AI 收據辨識 (Gemini 3 Flash)
+                    </span>
+                    <span id="aiStatus" class="text-xs text-slate-400"></span>
                 </div>
-                <span id="aiStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium hidden flex items-center gap-1">
-                    <i class="fa-solid fa-spinner fa-spin text-xs"></i> 辨識中...
-                </span>
+                <div class="flex gap-2 items-center">
+                    <input type="file" id="receiptImage" accept="image/*" class="hidden">
+                    <button id="uploadBtn" class="flex-1 bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-camera"></i> 選擇/拍攝收據照片
+                    </button>
+                </div>
+                <div id="imagePreviewContainer" class="hidden mt-2 relative">
+                    <img id="imagePreview" class="max-h-36 mx-auto rounded border border-slate-300">
+                    <button id="clearImageBtn" class="absolute top-1 right-1 bg-slate-800/70 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center">✕</button>
+                </div>
             </div>
 
-            <!-- Upload File Input Box -->
-            <label for="receiptFileInput" class="cursor-pointer bg-[#F0F4F8] hover:bg-[#E2EAF2] text-[#5A6A80] rounded-xl py-3 px-4 flex justify-center items-center gap-2 border border-slate-200 transition text-sm font-medium">
-                <i class="fa-solid fa-camera text-base"></i>
-                <span id="uploadBtnText">選擇/拍攝收據照片</span>
-                <input type="file" id="receiptFileInput" accept="image/*" class="hidden" />
-            </label>
+            <!-- 輸入表單區 -->
+            <div class="bg-white rounded-lg border border-slate-200 p-4 space-y-3 shadow-sm">
+                <!-- 金額輸入與快捷鍵 -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-semibold text-slate-700">日幣金額 (JPY)</label>
+                        <span id="twdPreview" class="text-xs font-medium text-emerald-600">≈ NT$ 0</span>
+                    </div>
+                    <div class="relative">
+                        <input type="number" id="amountInput" placeholder="0" 
+                               class="w-full text-2xl font-bold px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-right pr-8">
+                        <button id="clearAmount" class="clear-btn text-slate-400 hover:text-slate-600 hidden">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                    <!-- 快捷加總按鈕 -->
+                    <div class="grid grid-cols-4 gap-2 mt-2">
+                        <button type="button" class="quick-add bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-1.5 rounded text-xs" data-val="100">+100</button>
+                        <button type="button" class="quick-add bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-1.5 rounded text-xs" data-val="500">+500</button>
+                        <button type="button" class="quick-add bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-1.5 rounded text-xs" data-val="1000">+1000</button>
+                        <button type="button" class="quick-add bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-1.5 rounded text-xs" data-val="5000">+5000</button>
+                    </div>
+                </div>
 
-            <!-- Image Preview Box -->
-            <div id="imagePreviewContainer" class="relative hidden rounded-xl overflow-hidden border border-slate-200 bg-slate-50 max-h-52 flex justify-center items-center">
-                <img id="receiptImagePreview" class="max-h-52 object-contain w-full" alt="Receipt Preview">
-                <button id="clearImageBtn" type="button" class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs transition">
-                    <i class="fa-solid fa-xmark"></i>
+                <!-- 品名 -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">品名 / 店家</label>
+                    <div class="relative">
+                        <input type="text" id="itemNameInput" placeholder="例如：FamilyMart / 藥妝" 
+                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none pr-8 text-sm">
+                        <button id="clearItemName" class="clear-btn text-slate-400 hover:text-slate-600 hidden">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 備註 -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">備註 / 翻譯內容</label>
+                    <div class="relative">
+                        <textarea id="noteInput" rows="2" placeholder="詳細內容或AI翻譯備註" 
+                                  class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm pr-8 resize-none"></textarea>
+                        <button id="clearNote" class="clear-btn text-slate-400 hover:text-slate-600 hidden" style="top: 1.25rem;">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="addRecordBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg shadow flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus"></i> 新增此筆記帳
                 </button>
             </div>
 
-            <!-- Start AI Processing Button -->
-            <button id="startAiBtn" type="button" class="bg-[#6B7B8C] hover:bg-[#596878] active:scale-[0.99] text-white py-3 rounded-xl font-medium shadow transition flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                <span>✨ 開始 AI 辨識與翻譯</span>
-            </button>
-        </section>
-
-        <!-- Expense Entry Input Form -->
-        <section class="card-container p-5 flex flex-col gap-4">
-            <div class="text-[#4A5568] font-bold text-base flex items-center gap-2">
-                <span>📝</span>
-                <span>新增消費項目</span>
-            </div>
-
-            <!-- Amount Input -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-slate-500">金額 (JPY ¥)</label>
-                <div class="relative flex items-center">
-                    <input type="number" id="inputAmount" placeholder="0" class="w-full bg-[#FAFAFA] border border-slate-200 rounded-xl py-2.5 pl-3 pr-10 text-slate-800 text-base font-bold focus:outline-none focus:border-[#6B7B8C]">
-                    <button type="button" onclick="clearInput('inputAmount')" class="absolute right-3 text-slate-400 hover:text-slate-600 bg-slate-200/60 rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        <i class="fa-solid fa-xmark"></i>
+            <!-- 明細列表與匯出區 -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <h2 class="font-bold text-slate-700 flex items-center gap-1">
+                        <i class="fa-solid fa-list-check"></i> 記帳明細 
+                        <span id="recordCount" class="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">0</span>
+                    </h2>
+                    <button id="copyTsvBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-1 shadow">
+                        <i class="fa-solid fa-copy"></i> 複製試算表格式 (TSV)
                     </button>
                 </div>
-            </div>
 
-            <!-- Quick Add Amount Buttons -->
-            <div class="grid grid-cols-5 gap-1.5">
-                <button type="button" onclick="addAmount(100)" class="quick-btn py-2.5 rounded-xl text-xs font-bold">+100</button>
-                <button type="button" onclick="addAmount(500)" class="quick-btn py-2.5 rounded-xl text-xs font-bold">+500</button>
-                <button type="button" onclick="addAmount(1000)" class="quick-btn py-2.5 rounded-xl text-xs font-bold">+1000</button>
-                <button type="button" onclick="addAmount(5000)" class="quick-btn py-2.5 rounded-xl text-xs font-bold">+5000</button>
-                <button type="button" onclick="addAmount(10000)" class="quick-btn py-2 rounded-xl text-xs font-bold leading-tight">+1<br>萬</button>
-            </div>
-
-            <!-- Product / Store Name -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-slate-500">品名 / 店家</label>
-                <div class="relative flex items-center">
-                    <input type="text" id="inputStore" placeholder="例如：MEGA 唐吉訶德 名古屋店" class="w-full bg-[#FAFAFA] border border-slate-200 rounded-xl py-2.5 pl-3 pr-10 text-slate-800 text-sm focus:outline-none focus:border-[#6B7B8C]">
-                    <button type="button" onclick="clearInput('inputStore')" class="absolute right-3 text-slate-400 hover:text-slate-600 bg-slate-200/60 rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
+                <div class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+                    <div class="max-h-80 overflow-y-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 text-xs border-b sticky top-0">
+                                <tr>
+                                    <th class="p-2">品名/備註</th>
+                                    <th class="p-2 text-right">日幣</th>
+                                    <th class="p-2 text-right">台幣</th>
+                                    <th class="p-2 text-center w-8">刪</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordList" class="divide-y divide-slate-100">
+                                <!-- 動態渲染明細 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-
-            <!-- Category & Date Grid -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-slate-500">類別</label>
-                    <select id="inputCategory" class="w-full bg-[#FAFAFA] border border-slate-200 rounded-xl py-2.5 px-2 text-slate-800 text-sm focus:outline-none focus:border-[#6B7B8C] cursor-pointer">
-                        <option value="餐飲 🍱">餐飲 🍱</option>
-                        <option value="購物 🛒">購物 🛒</option>
-                        <option value="交通 🚌">交通 🚌</option>
-                        <option value="景點 🎟️">景點/娛樂 🎟️</option>
-                        <option value="住宿 🏨">住宿 🏨</option>
-                        <option value="其他 📦">其他 📦</option>
-                    </select>
-                </div>
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-slate-500">日期</label>
-                    <input type="date" id="inputDate" class="w-full bg-[#FAFAFA] border border-slate-200 rounded-xl py-2 px-2 text-slate-800 text-sm focus:outline-none focus:border-[#6B7B8C]">
-                </div>
-            </div>
-
-            <!-- Notes & Translation Textarea -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-slate-500">備註 / 翻譯細節</label>
-                <div class="relative flex items-center">
-                    <textarea id="inputNotes" rows="2" placeholder="詳細內容或 AI 翻譯備註" class="w-full bg-[#FAFAFA] border border-slate-200 rounded-xl py-2 pl-3 pr-10 text-slate-800 text-sm focus:outline-none focus:border-[#6B7B8C] resize-none"></textarea>
-                    <button type="button" onclick="clearInput('inputNotes')" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 bg-slate-200/60 rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Add Expense Submit Button -->
-            <button type="button" id="addExpenseBtn" class="mt-2 bg-[#AA7878] hover:bg-[#966767] active:scale-[0.99] text-white py-3.5 rounded-xl font-medium shadow transition flex items-center justify-center gap-2 text-sm">
-                <i class="fa-solid fa-plus"></i>
-                <span>新增上記帳明細</span>
-            </button>
-        </section>
-
-        <!-- Registered Expenses List Card -->
-        <section class="card-container p-4 flex flex-col gap-3">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-                <div class="flex items-center gap-2">
-                    <span class="text-lg">📋</span>
-                    <span class="font-bold text-[#4A5568]">記帳明細</span>
-                    <span id="expenseCounter" class="bg-slate-200 text-slate-700 font-bold text-xs px-2 py-0.5 rounded-full">0</span>
-                </div>
-                
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <!-- Sync to Google Sheets Button -->
-                    <button type="button" id="syncSheetsBtn" class="bg-[#3B82F6] hover:bg-[#2563EB] active:scale-[0.98] text-white text-xs font-semibold px-2.5 py-2 rounded-xl transition shadow flex items-center gap-1">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <span>同步到試算表</span>
-                    </button>
-                    <!-- TSV Spreadsheet Export Button -->
-                    <button type="button" id="copyTsvBtn" class="bg-[#4C8B74] hover:bg-[#3f7360] active:scale-[0.98] text-white text-xs font-semibold px-2.5 py-2 rounded-xl transition shadow flex items-center gap-1">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>複製 (TSV)</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Total Amount Header with JPY & TWD -->
-            <div class="bg-amber-50/80 border border-amber-200/70 rounded-xl px-4 py-2.5 flex justify-between items-center text-sm">
-                <span class="text-amber-800 font-medium">總支出合計：</span>
-                <div class="text-right">
-                    <span id="totalAmountText" class="text-amber-900 font-bold text-lg block">¥ 0</span>
-                    <span id="totalTwdText" class="text-amber-700/80 text-xs font-semibold block">≈ NT$ 0</span>
-                </div>
-            </div>
-
-            <!-- Dynamic Expense List Container -->
-            <div id="expenseList" class="flex flex-col gap-3 max-h-[550px] overflow-y-auto pr-1">
-                <!-- Empty Placeholder -->
-                <div id="emptyState" class="text-center text-slate-400 text-sm py-10">
-                    尚無記帳紀錄，請從上方新增。
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <!-- Gemini & Webhook Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-4 hidden">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
-                    <i class="fa-solid fa-gear text-[#6B7B8C]"></i> 系統與試算表設定
-                </h3>
-                <button id="closeSettingsBtn" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <!-- Exchange Rate -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-slate-600">日幣對台幣匯率 (JPY → TWD)</label>
-                <input type="number" step="0.001" id="exchangeRateInput" value="0.21" placeholder="0.21" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#6B7B8C]">
-                <p class="text-[11px] text-slate-400">例：0.21 代表 1000 日圓 ≈ 210 台幣</p>
-            </div>
-
-            <!-- Gemini API Key -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-slate-600">Gemini API Key</label>
-                <input type="password" id="apiKeyInput" placeholder="請貼上您的 Gemini API Key" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#6B7B8C]">
-            </div>
-
-            <!-- Google Sheets Webhook URL -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-slate-600">Google Apps Script Web App URL (自動同步用)</label>
-                <input type="text" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#6B7B8C]">
-            </div>
-
-            <!-- Apps Script Helper Code Toggle -->
-            <details class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-                <summary class="font-bold text-slate-700 cursor-pointer">📜 Google 試算表同步腳本教學</summary>
-                <p class="text-slate-500 mt-2">請在 Google 試算表中點選「擴充功能」->「Apps Script」，貼上以下程式碼並部署為 Web 應用程式 (所有人皆可存取)：</p>
-                <pre class="bg-slate-800 text-slate-100 p-2.5 rounded-lg text-[10px] mt-2 overflow-x-auto selection:bg-rose-500">
-function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
-  data.forEach(function(r) {
-    sheet.appendRow([r.date, r.category, r.store, r.amount, r.twdAmount, r.notes]);
-  });
-  return ContentService.createTextOutput("Success");
-}</pre>
-            </details>
-
-            <button id="saveSettingsBtn" class="mt-2 bg-[#6B7B8C] hover:bg-[#596878] text-white font-medium py-2.5 rounded-xl transition text-sm">
-                儲存設定
-            </button>
-        </div>
-    </div>
-
-    <!-- Notification Toast Popup -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs px-4 py-2.5 rounded-full shadow-lg transition duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
-        <i class="fa-solid fa-circle-check text-green-400"></i>
-        <span id="toastMsg">成功複製到剪貼簿</span>
+        </main>
     </div>
 
     <script>
-        // State management
-        let expenses = [];
-        let currentImageBase64 = null;
-        let exchangeRate = 0.21;
-        let webhookUrl = '';
+        // State Management
+        let records = JSON.parse(localStorage.getItem('japan_travel_records') || '[]');
+        let rate = parseFloat(localStorage.getItem('jpy_twd_rate') || '0.21');
+        let apiKey = localStorage.getItem('gemini_api_key') || '';
 
-        // DOM elements
-        const inputAmount = document.getElementById('inputAmount');
-        const inputStore = document.getElementById('inputStore');
-        const inputCategory = document.getElementById('inputCategory');
-        const inputDate = document.getElementById('inputDate');
-        const inputNotes = document.getElementById('inputNotes');
-        const expenseList = document.getElementById('expenseList');
-        const emptyState = document.getElementById('emptyState');
-        const totalAmountText = document.getElementById('totalAmountText');
-        const totalTwdText = document.getElementById('totalTwdText');
-        const expenseCounter = document.getElementById('expenseCounter');
-
-        // Settings Modal DOM
-        const settingsModal = document.getElementById('settingsModal');
-        const openSettingsBtn = document.getElementById('openSettingsBtn');
-        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        // DOM Elements
         const apiKeyInput = document.getElementById('apiKeyInput');
         const exchangeRateInput = document.getElementById('exchangeRateInput');
-        const webhookUrlInput = document.getElementById('webhookUrlInput');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
 
-        // File upload & Buttons DOM
-        const receiptFileInput = document.getElementById('receiptFileInput');
-        const uploadBtnText = document.getElementById('uploadBtnText');
+        const amountInput = document.getElementById('amountInput');
+        const twdPreview = document.getElementById('twdPreview');
+        const itemNameInput = document.getElementById('itemNameInput');
+        const noteInput = document.getElementById('noteInput');
+
+        const clearAmount = document.getElementById('clearAmount');
+        const clearItemName = document.getElementById('clearItemName');
+        const clearNote = document.getElementById('clearNote');
+
+        const receiptImage = document.getElementById('receiptImage');
+        const uploadBtn = document.getElementById('uploadBtn');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-        const receiptImagePreview = document.getElementById('receiptImagePreview');
+        const imagePreview = document.getElementById('imagePreview');
         const clearImageBtn = document.getElementById('clearImageBtn');
-        const startAiBtn = document.getElementById('startAiBtn');
-        const aiStatusBadge = document.getElementById('aiStatusBadge');
-        const addExpenseBtn = document.getElementById('addExpenseBtn');
+        const aiStatus = document.getElementById('aiStatus');
+
+        const addRecordBtn = document.getElementById('addRecordBtn');
+        const recordList = document.getElementById('recordList');
+        const recordCount = document.getElementById('recordCount');
         const copyTsvBtn = document.getElementById('copyTsvBtn');
-        const syncSheetsBtn = document.getElementById('syncSheetsBtn');
 
-        // Initialize today's date
-        const today = new Date().toISOString().split('T')[0];
-        inputDate.value = today;
+        // Initial Setup
+        apiKeyInput.value = apiKey;
+        exchangeRateInput.value = rate;
 
-        // App initialization
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedExpenses = localStorage.getItem('jp_expenses');
-            if (savedExpenses) {
-                try { expenses = JSON.parse(savedExpenses); } catch (e) { expenses = []; }
-            }
-            
-            // Load settings
-            exchangeRate = parseFloat(localStorage.getItem('jp_exchange_rate')) || 0.21;
-            exchangeRateInput.value = exchangeRate;
-            apiKeyInput.value = localStorage.getItem('gemini_api_key') || '';
-            webhookUrl = localStorage.getItem('jp_webhook_url') || '';
-            webhookUrlInput.value = webhookUrl;
-
-            renderExpenses();
+        // Settings Toggle & Save
+        toggleSettingsBtn.addEventListener('click', () => settingsPanel.classList.toggle('hidden'));
+        apiKeyInput.addEventListener('change', (e) => {
+            apiKey = e.target.value.trim();
+            localStorage.setItem('gemini_api_key', apiKey);
+        });
+        exchangeRateInput.addEventListener('change', (e) => {
+            rate = parseFloat(e.target.value) || 0.21;
+            localStorage.setItem('jpy_twd_rate', rate);
+            updateTwdPreview();
+            renderRecords();
         });
 
-        // Quick input clear & amount addition
-        function clearInput(id) {
-            const el = document.getElementById(id);
-            if (el) { el.value = ''; el.focus(); }
+        // Input Clears logic
+        function setupClearBtn(input, btn) {
+            input.addEventListener('input', () => {
+                btn.classList.toggle('hidden', !input.value);
+            });
+            btn.addEventListener('click', () => {
+                input.value = '';
+                btn.classList.add('hidden');
+                if (input === amountInput) updateTwdPreview();
+            });
+        }
+        setupClearBtn(amountInput, clearAmount);
+        setupClearBtn(itemNameInput, clearItemName);
+        setupClearBtn(noteInput, clearNote);
+
+        // Amount Calculations & Quick Add
+        function updateTwdPreview() {
+            const val = parseFloat(amountInput.value) || 0;
+            twdPreview.textContent = `≈ NT$ ${Math.round(val * rate)}`;
         }
 
-        function addAmount(val) {
-            let currentVal = parseInt(inputAmount.value, 10) || 0;
-            currentVal += val;
-            inputAmount.value = currentVal;
-        }
+        amountInput.addEventListener('input', updateTwdPreview);
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMsg');
-            toastMsg.innerText = msg;
-            toast.classList.remove('opacity-0');
-            setTimeout(() => { toast.classList.add('opacity-0'); }, 2600);
-        }
-
-        // Settings modal logic
-        openSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
-        closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
-        saveSettingsBtn.addEventListener('click', () => {
-            localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
-            exchangeRate = parseFloat(exchangeRateInput.value) || 0.21;
-            localStorage.setItem('jp_exchange_rate', exchangeRate);
-            webhookUrl = webhookUrlInput.value.trim();
-            localStorage.setItem('jp_webhook_url', webhookUrl);
-
-            settingsModal.classList.add('hidden');
-            renderExpenses();
-            showToast('設定已更新');
+        document.querySelectorAll('.quick-add').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const addVal = parseInt(btn.getAttribute('data-val'));
+                const currentVal = parseInt(amountInput.value) || 0;
+                amountInput.value = currentVal + addVal;
+                clearAmount.classList.remove('hidden');
+                updateTwdPreview();
+            });
         });
 
-        // Image Selection Reset
-        receiptFileInput.addEventListener('change', (e) => {
+        // AI Image Upload & Recognition
+        uploadBtn.addEventListener('click', () => receiptImage.click());
+
+        clearImageBtn.addEventListener('click', () => {
+            receiptImage.value = '';
+            imagePreviewContainer.classList.add('hidden');
+            aiStatus.textContent = '';
+        });
+
+        receiptImage.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            currentImageBase64 = null;
-            receiptImagePreview.src = '';
-            
+            if (!apiKey) {
+                alert('請先點擊右上角⚙️設定，貼上您的 Gemini API Key！');
+                return;
+            }
+
+            // Show preview
             const reader = new FileReader();
-            reader.onload = (event) => {
-                currentImageBase64 = event.target.result;
-                receiptImagePreview.src = currentImageBase64;
+            reader.onload = (evt) => {
+                imagePreview.src = evt.target.result;
                 imagePreviewContainer.classList.remove('hidden');
-                uploadBtnText.innerText = '更換收據照片 (' + file.name + ')';
             };
             reader.readAsDataURL(file);
-        });
 
-        clearImageBtn.addEventListener('click', resetImageSelection);
-
-        function resetImageSelection() {
-            currentImageBase64 = null;
-            receiptFileInput.value = '';
-            receiptImagePreview.src = '';
-            imagePreviewContainer.classList.add('hidden');
-            uploadBtnText.innerText = '選擇/拍攝收據照片';
-        }
-
-        // AI Processing Logic (Gemini API)
-        startAiBtn.addEventListener('click', async () => {
-            if (!currentImageBase64) {
-                showToast('請先選擇或拍攝一張收據照片');
-                return;
-            }
-
-            const apiKey = localStorage.getItem('gemini_api_key') || '';
-            const modelName = 'gemini-2.5-flash';
-
-            startAiBtn.disabled = true;
-            aiStatusBadge.classList.remove('hidden');
-            showToast('AI 正在精準辨識收據與翻譯明細...');
+            // Clean previous AI state
+            aiStatus.textContent = 'AI 辨識中...';
+            aiStatus.className = 'text-xs text-purple-600 font-semibold animate-pulse';
 
             try {
-                const base64Data = currentImageBase64.split(',')[1];
-                const mimeType = currentImageBase64.split(';')[0].split(':')[1] || 'image/jpeg';
-
-                const promptText = `你是一個精準的日本旅遊記帳AI。請仔細讀取這張日本發票/收據照片，提取以下資料，並翻譯所有日文消費品名為繁體中文。
-請絕對僅輸出 JSON 格式 (不要包含 markdown 標籤或 \`\`\`json)：
-{
-  "amount": 數字 (發票總金額日幣 JPY，整數，不要包含逗號),
-  "store": "店家名稱或主要消費品名",
-  "category": "請精確選取下列類別之一：餐飲 🍱, 購物 🛒, 交通 🚌, 景點 🎟️, 住宿 🏨, 其他 📦",
-  "notes": "日文明細翻譯與項目備註 (例如：拉麵x1 800日圓, 煎餃x1 400日圓)"
-}`;
-
-                const payload = {
-                    contents: [{
-                        parts: [
-                            { text: promptText },
-                            { inlineData: { mimeType: mimeType, data: base64Data } }
-                        ]
-                    }]
-                };
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errRes = await response.json().catch(() => ({}));
-                    throw new Error(errRes.error?.message || `HTTP ${response.status}`);
+                const base64Image = await fileToBase64(file);
+                const result = await callGeminiVision(base64Image, apiKey);
+                
+                if (result) {
+                    if (result.amount) {
+                        amountInput.value = result.amount;
+                        clearAmount.classList.remove('hidden');
+                        updateTwdPreview();
+                    }
+                    if (result.storeName) {
+                        itemNameInput.value = result.storeName;
+                        clearItemName.classList.remove('hidden');
+                    }
+                    if (result.translatedItems) {
+                        noteInput.value = result.translatedItems;
+                        clearNote.classList.remove('hidden');
+                    }
+                    aiStatus.textContent = '辨識成功！';
+                    aiStatus.className = 'text-xs text-emerald-600 font-semibold';
                 }
-
-                const result = await response.json();
-                const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (!aiText) throw new Error('無法取得 AI 辨識內容');
-
-                const cleanedText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
-                const parsedData = JSON.parse(cleanedText);
-
-                if (parsedData.amount) inputAmount.value = parsedData.amount;
-                if (parsedData.store) inputStore.value = parsedData.store;
-                if (parsedData.category) {
-                    const matchedCategory = Array.from(inputCategory.options).find(opt => opt.value.includes(parsedData.category.substring(0, 2)));
-                    if (matchedCategory) inputCategory.value = matchedCategory.value;
-                }
-                if (parsedData.notes) inputNotes.value = parsedData.notes;
-
-                showToast('✨ AI 辨識與翻譯成功！已自動帶入');
-
             } catch (err) {
                 console.error(err);
-                if (!localStorage.getItem('gemini_api_key')) {
-                    showToast('請點擊右上角⚙️設定您的 Gemini API Key');
-                    settingsModal.classList.remove('hidden');
-                } else {
-                    showToast('辨識失敗: ' + err.message);
-                }
-            } finally {
-                startAiBtn.disabled = false;
-                aiStatusBadge.classList.add('hidden');
+                aiStatus.textContent = '辨識失敗';
+                aiStatus.className = 'text-xs text-red-600 font-semibold';
             }
         });
 
-        // Add Expense Entry
-        addExpenseBtn.addEventListener('click', () => {
-            const amount = parseInt(inputAmount.value, 10) || 0;
-            const store = inputStore.value.trim() || '未具名消費';
-            const category = inputCategory.value;
-            const date = inputDate.value || today;
-            const notes = inputNotes.value.trim();
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
 
-            if (amount <= 0) {
-                showToast('請輸入消費金額');
-                inputAmount.focus();
-                return;
-            }
+        async function callGeminiVision(base64Data, key) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`;
+            
+            const prompt = `你是一個日本旅遊記帳助手。請分析這張收據照片，並回傳純JSON格式結果（不要有 markdown codeblock 包裹）：
+            {
+                "amount": 總金額數字(整數日圓, 若辨識不到填 0),
+                "storeName": "店家名稱或主要商品類別",
+                "translatedItems": "將主要購買的商品翻譯為繁體中文，格式為：品項1 (日幣金額), 品項2..."
+            }`;
 
-            const newEntry = {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                        ]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+            const textResp = data.candidates[0].content.parts[0].text;
+            const cleanJson = textResp.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanJson);
+        }
+
+        // Record Management
+        addRecordBtn.addEventListener('click', () => {
+            const jpy = parseInt(amountInput.value) || 0;
+            const item = itemNameInput.value.trim() || '未命名消費';
+            const note = noteInput.value.trim();
+
+            if (jpy <= 0 && !confirm('確定新增金額為 0 的紀錄嗎？')) return;
+
+            const newRecord = {
                 id: Date.now(),
-                amount,
-                store,
-                category,
-                date,
-                notes
+                date: new Date().toLocaleDateString('zh-TW'),
+                time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
+                item: item,
+                jpy: jpy,
+                twd: Math.round(jpy * rate),
+                note: note
             };
 
-            expenses.unshift(newEntry);
+            records.unshift(newRecord);
             saveAndRender();
 
-            inputAmount.value = '';
-            inputStore.value = '';
-            inputNotes.value = '';
-            resetImageSelection();
-
-            showToast('已加入記帳明細');
+            // Reset inputs
+            amountInput.value = '';
+            itemNameInput.value = '';
+            noteInput.value = '';
+            clearAmount.classList.add('hidden');
+            clearItemName.classList.add('hidden');
+            clearNote.classList.add('hidden');
+            updateTwdPreview();
         });
 
         function saveAndRender() {
-            localStorage.setItem('jp_expenses', JSON.stringify(expenses));
-            renderExpenses();
+            localStorage.setItem('japan_travel_records', JSON.stringify(records));
+            renderRecords();
         }
 
-        // Render Expenses with TWD Conversion
-        function renderExpenses() {
-            expenseCounter.innerText = expenses.length;
-            
-            // Total Sum JPY and TWD
-            const totalJpy = expenses.reduce((sum, item) => sum + (parseInt(item.amount, 10) || 0), 0);
-            const totalTwd = Math.round(totalJpy * exchangeRate);
-            
-            totalAmountText.innerText = `¥ ${totalJpy.toLocaleString()}`;
-            totalTwdText.innerText = `≈ NT$ ${totalTwd.toLocaleString()}`;
+        function renderRecords() {
+            recordCount.textContent = records.length;
+            recordList.innerHTML = '';
 
-            if (expenses.length === 0) {
-                emptyState.classList.remove('hidden');
-                expenseList.innerHTML = '';
-                expenseList.appendChild(emptyState);
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-            expenseList.innerHTML = '';
-
-            expenses.forEach((item) => {
-                const twdValue = Math.round((parseInt(item.amount, 10) || 0) * exchangeRate);
-                const card = document.createElement('div');
-                card.className = "bg-[#FAFAFA] border border-slate-200/90 rounded-xl p-3 flex flex-col gap-2 shadow-sm relative";
-
-                card.innerHTML = `
-                    <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                        <div class="flex items-center gap-1 flex-1 min-w-0">
-                            <input type="date" value="${item.date}" onchange="updateItem(${item.id}, 'date', this.value)" class="bg-transparent text-xs text-slate-500 focus:bg-white focus:outline-none rounded px-1 border border-transparent focus:border-slate-300">
-                            
-                            <select onchange="updateItem(${item.id}, 'category', this.value)" class="bg-transparent text-xs font-bold text-slate-700 focus:bg-white focus:outline-none rounded px-1 border border-transparent focus:border-slate-300 cursor-pointer">
-                                <option value="餐飲 🍱" ${item.category === '餐飲 🍱' ? 'selected' : ''}>餐飲 🍱</option>
-                                <option value="購物 🛒" ${item.category === '購物 🛒' ? 'selected' : ''}>購物 🛒</option>
-                                <option value="交通 🚌" ${item.category === '交通 🚌' ? 'selected' : ''}>交通 🚌</option>
-                                <option value="景點 🎟️" ${item.category === '景點 🎟️' ? 'selected' : ''}>景點/娛樂 🎟️</option>
-                                <option value="住宿 🏨" ${item.category === '住宿 🏨' ? 'selected' : ''}>住宿 🏨</option>
-                                <option value="其他 📦" ${item.category === '其他 📦' ? 'selected' : ''}>其他 📦</option>
-                            </select>
-                        </div>
-
-                        <!-- Editable Amount & TWD Display -->
-                        <div class="flex flex-col items-end">
-                            <div class="flex items-center gap-0.5">
-                                <span class="text-xs text-rose-800 font-bold">¥</span>
-                                <input type="number" value="${item.amount}" onchange="updateItem(${item.id}, 'amount', this.value)" class="w-20 text-right text-base font-bold text-rose-900 bg-transparent focus:bg-white focus:outline-none rounded px-1 border border-transparent focus:border-rose-300">
-                                <button onclick="deleteItem(${item.id})" class="text-slate-300 hover:text-rose-500 p-1 ml-1 transition" title="刪除項目">
-                                    <i class="fa-solid fa-trash-can text-xs"></i>
-                                </button>
-                            </div>
-                            <span class="text-[11px] text-slate-400 font-semibold pr-6">NT$ ${twdValue.toLocaleString()}</span>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-store text-slate-400 text-xs"></i>
-                        <input type="text" value="${escapeHtml(item.store)}" onchange="updateItem(${item.id}, 'store', this.value)" placeholder="品名/店家" class="w-full text-sm font-semibold text-slate-800 bg-transparent focus:bg-white focus:outline-none rounded px-1 border border-transparent focus:border-slate-300">
-                    </div>
-
-                    <div class="flex items-start gap-2">
-                        <i class="fa-solid fa-pen text-slate-400 text-xs mt-1"></i>
-                        <textarea rows="1" onchange="updateItem(${item.id}, 'notes', this.value)" placeholder="備註細節" class="w-full text-xs text-slate-600 bg-transparent focus:bg-white focus:outline-none rounded px-1 border border-transparent focus:border-slate-300 resize-none">${escapeHtml(item.notes || '')}</textarea>
-                    </div>
+            records.forEach((rec, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 border-b border-slate-100 text-xs';
+                tr.innerHTML = `
+                    <td class="p-2">
+                        <div contenteditable="true" class="edit-item font-semibold text-slate-800 outline-none" data-idx="${idx}">${rec.item}</div>
+                        <div contenteditable="true" class="edit-note text-slate-400 text-[10px] outline-none" data-idx="${idx}">${rec.note || '點擊新增備註'}</div>
+                    </td>
+                    <td class="p-2 text-right">
+                        ¥ <span contenteditable="true" class="edit-jpy font-medium text-slate-700 outline-none" data-idx="${idx}">${rec.jpy}</span>
+                    </td>
+                    <td class="p-2 text-right">
+                        $ <span contenteditable="true" class="edit-twd font-medium text-emerald-600 outline-none" data-idx="${idx}">${rec.twd}</span>
+                    </td>
+                    <td class="p-2 text-center">
+                        <button class="delete-btn text-slate-300 hover:text-red-500" data-idx="${idx}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
                 `;
-
-                expenseList.appendChild(card);
+                recordList.appendChild(tr);
             });
-        }
 
-        window.updateItem = function(id, field, value) {
-            const index = expenses.findIndex(item => item.id === id);
-            if (index !== -1) {
-                if (field === 'amount') {
-                    expenses[index][field] = parseInt(value, 10) || 0;
-                } else {
-                    expenses[index][field] = value;
-                }
-                saveAndRender();
-            }
-        };
-
-        window.deleteItem = function(id) {
-            expenses = expenses.filter(item => item.id !== id);
-            saveAndRender();
-            showToast('已刪除記帳項目');
-        };
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        // Direct Sync to Google Sheets via Webhook
-        syncSheetsBtn.addEventListener('click', async () => {
-            if (expenses.length === 0) {
-                showToast('無任何記帳資料可同步');
-                return;
-            }
-            if (!webhookUrl) {
-                showToast('請先在⚙️設定中輸入 Google Apps Script URL');
-                settingsModal.classList.remove('hidden');
-                return;
-            }
-
-            syncSheetsBtn.disabled = true;
-            showToast('正在同步至 Google 試算表...');
-
-            try {
-                const payloadData = expenses.map(item => ({
-                    date: item.date,
-                    category: item.category,
-                    store: item.store,
-                    amount: item.amount,
-                    twdAmount: Math.round(item.amount * exchangeRate),
-                    notes: item.notes || ''
-                }));
-
-                await fetch(webhookUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payloadData)
+            // Bind inline edit events
+            document.querySelectorAll('.edit-item').forEach(el => {
+                el.addEventListener('blur', (e) => {
+                    const idx = e.target.dataset.idx;
+                    records[idx].item = e.target.textContent.trim();
+                    saveAndRender();
                 });
+            });
 
-                showToast('✅ 已發送同步請求至 Google 試算表！');
-            } catch (err) {
-                console.error(err);
-                showToast('同步失敗: ' + err.message);
-            } finally {
-                syncSheetsBtn.disabled = false;
-            }
-        });
+            document.querySelectorAll('.edit-note').forEach(el => {
+                el.addEventListener('blur', (e) => {
+                    const idx = e.target.dataset.idx;
+                    const val = e.target.textContent.trim();
+                    records[idx].note = val === '點擊新增備註' ? '' : val;
+                    saveAndRender();
+                });
+            });
 
-        // TSV Clipboard Export
+            document.querySelectorAll('.edit-jpy').forEach(el => {
+                el.addEventListener('blur', (e) => {
+                    const idx = e.target.dataset.idx;
+                    const jpyVal = parseInt(e.target.textContent) || 0;
+                    records[idx].jpy = jpyVal;
+                    records[idx].twd = Math.round(jpyVal * rate);
+                    saveAndRender();
+                });
+            });
+
+            document.querySelectorAll('.edit-twd').forEach(el => {
+                el.addEventListener('blur', (e) => {
+                    const idx = e.target.dataset.idx;
+                    const twdVal = parseInt(e.target.textContent) || 0;
+                    records[idx].twd = twdVal;
+                    records[idx].jpy = Math.round(twdVal / rate);
+                    saveAndRender();
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = btn.dataset.idx;
+                    records.splice(idx, 1);
+                    saveAndRender();
+                });
+            });
+        }
+
+        // Copy TSV Format for Google Sheets / Excel
         copyTsvBtn.addEventListener('click', () => {
-            if (expenses.length === 0) {
-                showToast('無任何記帳資料可複製');
+            if (records.length === 0) {
+                alert('目前無紀錄可複製！');
                 return;
             }
 
-            let tsv = "日期\t類別\t品名/店家\t日幣(JPY)\t台幣(TWD)\t備註/翻譯細節\n";
-            expenses.forEach(item => {
-                const store = (item.store || '').replace(/\t|\n/g, ' ');
-                const notes = (item.notes || '').replace(/\t|\n/g, ' ');
-                const twd = Math.round(item.amount * exchangeRate);
-                tsv += `${item.date}\t${item.category}\t${store}\t${item.amount}\t${twd}\t${notes}\n`;
+            let tsv = '日期\t時間\t品名/店家\t日幣金額(JPY)\t台幣金額(TWD)\t備註/翻譯\n';
+            records.forEach(r => {
+                tsv += `${r.date}\t${r.time}\t${r.item}\t${r.jpy}\t${r.twd}\t${r.note || ''}\n`;
             });
 
-            copyTextToClipboard(tsv);
+            navigator.clipboard.writeText(tsv).then(() => {
+                const originalText = copyTsvBtn.innerHTML;
+                copyTsvBtn.innerHTML = `<i class="fa-solid fa-check"></i> 已複製完成！`;
+                copyTsvBtn.classList.replace('bg-emerald-600', 'bg-blue-600');
+                setTimeout(() => {
+                    copyTsvBtn.innerHTML = originalText;
+                    copyTsvBtn.classList.replace('bg-blue-600', 'bg-emerald-600');
+                }, 2000);
+            });
         });
 
-        function copyTextToClipboard(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-999999px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            
-            try {
-                document.execCommand('copy');
-                showToast('已成功複製 TSV！可直接貼上 Google 試算表');
-            } catch (err) {
-                showToast('複製失敗，請手動複製');
-            }
-            document.body.removeChild(textArea);
-        }
+        // Initial Render
+        renderRecords();
     </script>
 </body>
 </html>
