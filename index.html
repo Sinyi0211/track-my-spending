@@ -13,9 +13,6 @@
             background-color: #f3f4f6;
             -webkit-tap-highlight-color: transparent;
         }
-        .modal-animate {
-            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-        }
     </style>
 </head>
 <body class="font-sans text-gray-800 antialiased pb-24">
@@ -46,7 +43,7 @@
             </div>
         </div>
 
-        <!-- Quick Input Form (Direct Entry at Top) -->
+        <!-- Quick Input Form -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
             <div class="flex justify-between items-center pb-2 border-b border-gray-100">
                 <h2 class="font-bold text-gray-700 flex items-center gap-2">
@@ -56,12 +53,38 @@
             </div>
             
             <form id="recordForm" onsubmit="handleManualAdd(event)" class="space-y-3">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">金額 (JPY) *</label>
-                        <input type="number" id="inputAmount" placeholder="例: 1500" required
-                            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base font-semibold focus:outline-none focus:border-rose-500">
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs text-gray-500">金額 (JPY) *</label>
+                        <span id="calcPreview" class="text-xs text-rose-500 font-medium hidden">算式模式中</span>
                     </div>
+                    <div class="relative">
+                        <input type="text" id="inputAmount" placeholder="例: 1500 或 1500+100+50" required
+                            oninput="handleAmountInput(this)"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base font-semibold focus:outline-none focus:border-rose-500 pr-10">
+                        <button type="button" onclick="clearAmountInput()" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs px-1">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quick Add Nominal Buttons -->
+                    <div class="flex gap-1.5 mt-2">
+                        <button type="button" onclick="quickAddAmount(10)" class="flex-1 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 text-gray-600 text-xs font-semibold py-1.5 rounded-md border border-gray-200 transition">
+                            +10
+                        </button>
+                        <button type="button" onclick="quickAddAmount(100)" class="flex-1 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 text-gray-600 text-xs font-semibold py-1.5 rounded-md border border-gray-200 transition">
+                            +100
+                        </button>
+                        <button type="button" onclick="quickAddAmount(500)" class="flex-1 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 text-gray-600 text-xs font-semibold py-1.5 rounded-md border border-gray-200 transition">
+                            +500
+                        </button>
+                        <button type="button" onclick="quickAddAmount(1000)" class="flex-1 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 text-gray-600 text-xs font-semibold py-1.5 rounded-md border border-gray-200 transition">
+                            +1000
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">類別</label>
                         <select id="inputCategory" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-rose-500">
@@ -73,19 +96,17 @@
                             <option value="其他">📦 其他</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">店家 / 項目</label>
-                        <input type="text" id="inputMerchant" placeholder="例: 7-Eleven"
-                            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-rose-500">
-                    </div>
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">日期</label>
                         <input type="date" id="inputDate"
                             class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-rose-500">
                     </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">店家 / 項目</label>
+                    <input type="text" id="inputMerchant" placeholder="例: 7-Eleven"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-rose-500">
                 </div>
 
                 <div>
@@ -128,9 +149,7 @@
         <!-- Expense List -->
         <div class="space-y-2">
             <h2 class="font-bold text-gray-700 text-sm px-1">消費明細 (<span id="recordCount">0</span>)</h2>
-            <div id="expenseList" class="space-y-2">
-                <!-- Record Items will be populated here -->
-            </div>
+            <div id="expenseList" class="space-y-2"></div>
         </div>
 
     </main>
@@ -159,7 +178,7 @@
                 <input type="hidden" id="editId">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">金額 (JPY)</label>
-                    <input type="number" id="editAmount" required class="w-full bg-gray-50 border rounded-lg px-3 py-2 text-base font-semibold">
+                    <input type="text" id="editAmount" required class="w-full bg-gray-50 border rounded-lg px-3 py-2 text-base font-semibold">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">店家 / 項目</label>
@@ -220,18 +239,80 @@
 
     <script>
         // State Management
-        let records = JSON.parse(localStorage.getItem('japan_travel_records')) || [];
+        let records = [];
+        try {
+            records = JSON.parse(localStorage.getItem('japan_travel_records')) || [];
+        } catch (err) {
+            records = [];
+        }
         let apiKey = localStorage.getItem('gemini_api_key') || '';
         let exchangeRate = parseFloat(localStorage.getItem('jpy_rate')) || 0.21;
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('inputDate').valueAsDate = new Date();
+            const dateInput = document.getElementById('inputDate');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
             document.getElementById('apiKeyInput').value = apiKey;
             document.getElementById('rateInput').value = exchangeRate;
             document.getElementById('currentRateText').textContent = exchangeRate;
             renderList();
         });
+
+        // Quick Nominal Addition Buttons
+        function quickAddAmount(val) {
+            const inputEl = document.getElementById('inputAmount');
+            let currentVal = inputEl.value.trim();
+
+            if (!currentVal) {
+                inputEl.value = val;
+            } else {
+                if (/[+\-*\/]$/.test(currentVal)) {
+                    inputEl.value = currentVal + val;
+                } else {
+                    inputEl.value = currentVal + '+' + val;
+                }
+            }
+            handleAmountInput(inputEl);
+        }
+
+        function clearAmountInput() {
+            const inputEl = document.getElementById('inputAmount');
+            inputEl.value = '';
+            document.getElementById('calcPreview').classList.add('hidden');
+        }
+
+        function handleAmountInput(inputEl) {
+            const previewEl = document.getElementById('calcPreview');
+            const val = inputEl.value.trim();
+
+            if (val.includes('+') || val.includes('-') || val.includes('*') || val.includes('/')) {
+                const evalResult = evaluateMath(val);
+                if (evalResult !== null) {
+                    previewEl.textContent = `= ¥${evalResult.toLocaleString()}`;
+                    previewEl.classList.remove('hidden');
+                } else {
+                    previewEl.textContent = "算式輸入中...";
+                    previewEl.classList.remove('hidden');
+                }
+            } else {
+                previewEl.classList.add('hidden');
+            }
+        }
+
+        // Safe Math Evaluation
+        function evaluateMath(expression) {
+            try {
+                const sanitized = expression.replace(/[^0-9+\-*\/.]/g, '');
+                if (!sanitized) return null;
+                const result = Function('"use strict"; return (' + sanitized + ')')();
+                return isNaN(result) || !isFinite(result) ? null : Math.round(result);
+            } catch (err) {
+                return null;
+            }
+        }
 
         // Save Settings
         function saveSettings() {
@@ -297,23 +378,28 @@
         // Handle Manual Entry Add
         function handleManualAdd(e) {
             e.preventDefault();
-            const amount = parseFloat(document.getElementById('inputAmount').value);
-            if (!amount) return;
+            const rawInput = document.getElementById('inputAmount').value.trim();
+            const evaluatedAmount = evaluateMath(rawInput) || parseFloat(rawInput);
 
+            if (!evaluatedAmount || evaluatedAmount <= 0) {
+                showToast("請輸入有效的金額或算式");
+                return;
+            }
+
+            const inputDateVal = document.getElementById('inputDate').value;
             const newRecord = {
                 id: Date.now().toString(),
-                amount: amount,
+                amount: evaluatedAmount,
                 category: document.getElementById('inputCategory').value,
                 merchant: document.getElementById('inputMerchant').value || '未名店家',
-                date: document.getElementById('inputDate').value || new Date().toISOString().split('T')[0],
+                date: inputDateVal || new Date().toISOString().split('T')[0],
                 note: document.getElementById('inputNote').value || ''
             };
 
             records.unshift(newRecord);
             renderList();
 
-            // Reset Input
-            document.getElementById('inputAmount').value = '';
+            clearAmountInput();
             document.getElementById('inputMerchant').value = '';
             document.getElementById('inputNote').value = '';
             showToast("成功新增一筆記帳！");
@@ -348,18 +434,17 @@
                 records.unshift(newRecord);
                 renderList();
                 showToast("AI 辨識與翻譯成功！");
-                openEditModal(newRecord.id); // Auto open edit for review
+                openEditModal(newRecord.id);
             } catch (err) {
                 alert("AI 解析失敗: " + err.message);
             } finally {
                 document.getElementById('loadingModal').classList.add('hidden');
-                e.target.value = ''; // Clear file input
+                e.target.value = '';
             }
         }
 
         // Call Gemini 3.8 Flash REST API
         async function callGeminiAPI(base64Data) {
-            // Updated Endpoint to gemini-3.8-flash
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
             const prompt = `請解析這張日本收據/發票照片，並將結果輸出為 JSON 格式：
@@ -411,10 +496,13 @@
                 return;
             }
 
-            let tsv = "ID\t日期\t店家/項目\t日圓金額(JPY)\t估計台幣(TWD)\t類別\t中日文翻譯備註\n";
+            let tsv = "ID	日期	店家/項目	日圓金額(JPY)	估計台幣(TWD)	類別	中日文翻譯備註
+";
             records.forEach(r => {
                 const twd = Math.round(r.amount * exchangeRate);
-                tsv += `${r.id}\t${r.date}\t${r.merchant}\t${r.amount}\t${twd}\t${r.category}\t${(r.note || '').replace(/\n/g, ' ')}\n`;
+                tsv += `${r.id}	${r.date}	${r.merchant}	${r.amount}	${twd}	${r.category}	${(r.note || '').replace(/
+/g, ' ')}
+`;
             });
 
             navigator.clipboard.writeText(tsv).then(() => {
@@ -470,12 +558,15 @@
         function handleEditSave(e) {
             e.preventDefault();
             const id = document.getElementById('editId').value;
+            const rawAmount = document.getElementById('editAmount').value.trim();
+            const evaluatedAmount = evaluateMath(rawAmount) || parseFloat(rawAmount);
+
             const index = records.findIndex(r => r.id === id);
 
-            if (index !== -1) {
+            if (index !== -1 && evaluatedAmount > 0) {
                 records[index] = {
                     ...records[index],
-                    amount: parseFloat(document.getElementById('editAmount').value) || 0,
+                    amount: evaluatedAmount,
                     merchant: document.getElementById('editMerchant').value,
                     category: document.getElementById('editCategory').value,
                     date: document.getElementById('editDate').value,
