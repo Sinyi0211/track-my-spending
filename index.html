@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>日本旅遊記帳 AI 助手</title>
+  <title>日本旅遊記帳 AI 助手 (Gemini 串接版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -22,6 +22,21 @@
     </div>
   </header>
 
+  <!-- Gemini API Key Setting Section -->
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+    <div class="flex justify-between items-center mb-1">
+      <label class="block text-xs font-bold text-amber-800">Gemini API Key 設定</label>
+      <span class="text-[10px] text-amber-600">金鑰僅存於您的本地瀏覽器</span>
+    </div>
+    <div class="flex gap-2">
+      <input type="password" id="apiKeyInput" placeholder="請貼上您的 Gemini API Key" 
+        class="w-full border rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:border-amber-500">
+      <button onclick="saveApiKey()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-1 rounded shrink-0 shadow">
+        儲存
+      </button>
+    </div>
+  </div>
+
   <!-- Input Form Card -->
   <div class="bg-white p-4 rounded-xl shadow-sm mb-4 space-y-4">
     
@@ -29,18 +44,20 @@
     <div class="border-2 border-dashed border-indigo-200 rounded-lg p-3 text-center bg-indigo-50/50">
       <input type="file" id="receiptInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
       <button onclick="document.getElementById('receiptInput').click()" class="w-full text-indigo-600 font-medium text-sm flex items-center justify-center gap-2 py-1">
-        <span>📷</span> 拍照 / 上傳收據 (Gemini 3.8 AI 辨識翻譯)
+        <span>📷</span> 拍照 / 上傳收據 (真實 Gemini Vision 辨識)
       </button>
-      <div id="aiStatus" class="text-xs text-gray-500 mt-1 hidden">正在解析日文收據中...</div>
+      <div id="aiStatus" class="text-xs text-indigo-600 mt-1 hidden font-medium animate-pulse">正在精準解析日文收據中...</div>
     </div>
 
     <!-- Amount Input -->
     <div>
-      <label class="block text-xs font-semibold text-gray-500 mb-1">金額 (JPY 日圓)</label>
+      <div class="flex justify-between items-center mb-1">
+        <label class="block text-xs font-semibold text-gray-500">金額 (JPY 日圓)</label>
+        <button onclick="clearField('amount')" class="text-xs text-gray-400 border rounded px-1.5 py-0.5 hover:bg-gray-100">一鍵清除</button>
+      </div>
       <div class="flex items-center gap-2">
         <span class="text-lg font-bold text-gray-400">¥</span>
         <input type="number" id="amount" placeholder="0" class="w-full text-2xl font-bold border-b-2 border-indigo-500 focus:outline-none py-1">
-        <button onclick="clearAmount()" class="text-xs text-gray-400 border rounded px-2 py-1 hover:bg-gray-100">清除</button>
       </div>
     </div>
 
@@ -67,13 +84,19 @@
         </select>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 mb-1">店家/地點</label>
+        <div class="flex justify-between items-center mb-1">
+          <label class="block text-xs font-semibold text-gray-500">店家/品名</label>
+          <button onclick="clearField('merchant')" class="text-xs text-gray-400 border rounded px-1.5 py-0.5 hover:bg-gray-100">一鍵清除</button>
+        </div>
         <input type="text" id="merchant" placeholder="例: 7-11 / 驚安殿堂" class="w-full border rounded-lg p-2 text-sm bg-gray-50">
       </div>
     </div>
 
     <div>
-      <label class="block text-xs font-semibold text-gray-500 mb-1">備註 / 品項翻譯</label>
+      <div class="flex justify-between items-center mb-1">
+        <label class="block text-xs font-semibold text-gray-500">備註 / 明細翻譯</label>
+        <button onclick="clearField('note')" class="text-xs text-gray-400 border rounded px-1.5 py-0.5 hover:bg-gray-100">一鍵清除</button>
+      </div>
       <input type="text" id="note" placeholder="AI 翻譯品項或手動輸入..." class="w-full border rounded-lg p-2 text-sm bg-gray-50">
     </div>
 
@@ -119,7 +142,17 @@
 
     window.onload = function() {
       renderRecords();
+      const savedKey = localStorage.getItem('gemini_api_key');
+      if (savedKey) {
+        document.getElementById('apiKeyInput').value = savedKey;
+      }
     };
+
+    function saveApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      localStorage.setItem('gemini_api_key', key);
+      alert('API Key 已儲存至本地！');
+    }
 
     // 金額快捷按鈕累加
     function addAmount(val) {
@@ -128,8 +161,9 @@
       input.value = current + val;
     }
 
-    function clearAmount() {
-      document.getElementById('amount').value = '';
+    // 各欄位一鍵清除
+    function clearField(fieldId) {
+      document.getElementById(fieldId).value = '';
     }
 
     // 新增紀錄
@@ -153,12 +187,12 @@
       saveAndRender();
       
       // 清空表單
-      document.getElementById('amount').value = '';
-      document.getElementById('merchant').value = '';
-      document.getElementById('note').value = '';
+      clearField('amount');
+      clearField('merchant');
+      clearField('note');
     }
 
-    // 編輯金額欄位
+    // 即時編輯金額欄位
     function updateAmount(id, newAmount) {
       const val = parseFloat(newAmount);
       if (isNaN(val)) return;
@@ -166,6 +200,24 @@
       if (record) {
         record.amount = val;
         saveAndRender();
+      }
+    }
+
+    // 即時編輯店家/品名欄位
+    function updateMerchant(id, newMerchant) {
+      const record = records.find(r => r.id === id);
+      if (record) {
+        record.merchant = newMerchant;
+        localStorage.setItem('japan_records', JSON.stringify(records));
+      }
+    }
+
+    // 即時編輯備註/明細翻譯欄位
+    function updateNote(id, newNote) {
+      const record = records.find(r => r.id === id);
+      if (record) {
+        record.note = newNote;
+        localStorage.setItem('japan_records', JSON.stringify(records));
       }
     }
 
@@ -188,25 +240,30 @@
       records.forEach(r => {
         const twd = Math.round(r.amount * rate);
         const item = document.createElement('div');
-        item.className = 'bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center gap-2';
+        item.className = 'bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-2';
         item.innerHTML = `
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600 font-medium">${r.category}</span>
-              <span class="font-bold text-gray-800 text-sm truncate">${r.merchant}</span>
+          <div class="flex justify-between items-center gap-2">
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600 font-medium shrink-0">${r.category}</span>
+              <input type="text" value="${r.merchant}" onchange="updateMerchant(${r.id}, this.value)"
+                placeholder="品名/店家" class="font-bold text-gray-800 text-sm border-b border-transparent focus:border-indigo-500 focus:outline-none w-full bg-transparent">
             </div>
-            <div class="text-xs text-gray-500 mt-1">${r.date} ${r.note ? '• ' + r.note : ''}</div>
-          </div>
-          <div class="text-right flex items-center gap-3">
-            <div>
-              <div class="flex items-center justify-end gap-1">
-                <span class="text-xs text-gray-400">¥</span>
-                <input type="number" value="${r.amount}" onchange="updateAmount(${r.id}, this.value)" 
-                  class="w-20 font-bold text-gray-800 text-right border-b border-gray-300 focus:border-indigo-500 focus:outline-none bg-transparent">
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="text-right">
+                <div class="flex items-center justify-end gap-1">
+                  <span class="text-xs text-gray-400">¥</span>
+                  <input type="number" value="${r.amount}" onchange="updateAmount(${r.id}, this.value)" 
+                    class="w-20 font-bold text-gray-800 text-right border-b border-gray-300 focus:border-indigo-500 focus:outline-none bg-transparent">
+                </div>
+                <div class="text-xs text-gray-400 mt-0.5">≈ NT$ ${twd}</div>
               </div>
-              <div class="text-xs text-gray-400 mt-0.5">≈ NT$ ${twd}</div>
+              <button onclick="deleteRecord(${r.id})" class="text-gray-300 hover:text-red-500 text-lg px-1">✕</button>
             </div>
-            <button onclick="deleteRecord(${r.id})" class="text-gray-300 hover:text-red-500 text-lg px-1">✕</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400 shrink-0">${r.date}</span>
+            <input type="text" value="${r.note || ''}" onchange="updateNote(${r.id}, this.value)"
+              placeholder="備註 / 明細" class="text-xs text-gray-600 border-b border-gray-200 focus:border-indigo-500 focus:outline-none w-full bg-transparent">
           </div>
         `;
         list.appendChild(item);
@@ -232,13 +289,13 @@
       }
       
       const rate = parseFloat(document.getElementById('rate').value) || 0.215;
-      // 表頭
-      let tsv = "時間	類別	店家	日圓金額(JPY)	台幣折算(TWD)	備註/翻譯\n";
+      let tsv = "時間	類別	店家/品名	日圓金額(JPY)	台幣折算(TWD)	備註/明細
+";
       
-      // 內容列 (Tab 分隔)
       records.forEach(r => {
         const twd = Math.round(r.amount * rate);
-        tsv += `${r.date}	${r.category}	${r.merchant}	${r.amount}	${twd}	${r.note}\n`;
+        tsv += `${r.date}	${r.category}	${r.merchant}	${r.amount}	${twd}	${r.note}
+`;
       });
 
       navigator.clipboard.writeText(tsv).then(() => {
@@ -248,26 +305,97 @@
       });
     }
 
-    // 模擬 AI 收據辨識 (Gemini 3.8 Vision)
-    function handleImageUpload(e) {
+    // 【重要優化】真實 Gemini Vision API 呼叫與狀態清除處理
+    async function handleImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
 
+      // Bug修復 1: 每次發動新辨識時，強制先清空舊的暫存內容，防止帶入上一張紀錄
+      clearField('amount');
+      clearField('merchant');
+      clearField('note');
+
+      const apiKey = localStorage.getItem('gemini_api_key') || document.getElementById('apiKeyInput').value.trim();
       const status = document.getElementById('aiStatus');
+      status.innerText = "正在精準解析日文收據中...";
       status.classList.remove('hidden');
 
-      // 模擬 Gemini 3.8 辨識與翻譯過程
-      setTimeout(() => {
+      try {
+        if (!apiKey) {
+          alert('請先在上方輸入您的 Gemini API Key 才能發動 AI 精準辨識喔！');
+          status.classList.add('hidden');
+          return;
+        }
+
+        // 轉換圖片為 Base64
+        const base64Image = await fileToBase64(file);
+        
+        // 專為日本收據優化的 Prompt，限定純數字與精準金額規則
+        const promptText = `你是一位專業的日本旅遊會計助理。請仔細分析這張日文收據圖片：
+1. 找出收據中的「最終總金額 (Total Amount)」（請優先尋找「合計」、「税込」或「小計」旁邊的大字總數，絕對不要抓「お預り」(收現額) 或「お釣り」(找零額)）。
+2. 店家名稱：尋找最上方或印章上的店家名稱。
+3. 類別：從 ["🍱 餐飲", "🛍️ 購物", "🚃 交通", "🏨 住宿", "🎟️ 門票/娛樂", "💡 其他"] 選擇一個最適合的。
+4. 備註翻譯：將收據上的主要商品品項翻譯為「台灣繁體中文」，簡要列出明細（例如：抹茶餅乾x2、龍角散x1），忽略條碼與無關文字。
+
+請只回傳標準 JSON 格式，不要加入 markdown 標籤或其餘贅字：
+{"amount": 數字, "merchant": "店家名", "category": "類別", "note": "繁體中文翻譯明細"}`;
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: promptText },
+                {
+                  inline_data: {
+                    mime_type: file.type,
+                    data: base64Image.split(',')[1]
+                  }
+                }
+              ]
+            }]
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.candidates && data.candidates[0].content.parts[0].text) {
+          let responseText = data.candidates[0].content.parts[0].text.trim();
+          // 清除可能包覆的 markdown 語法
+          responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+          const result = JSON.parse(responseText);
+
+          // 帶入全新結果 (若欄位抓不到則維持空白)
+          document.getElementById('amount').value = result.amount || '';
+          document.getElementById('merchant').value = result.merchant || '';
+          if (result.category) document.getElementById('category').value = result.category;
+          document.getElementById('note').value = result.note || '';
+
+          alert('✨ Gemini AI 收據精準辨識與中文翻譯完成！');
+        } else {
+          throw new Error('API 無法辨識圖片內容');
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert('辨識失敗，請檢查 API Key 是否正確或試著拍攝更清晰的照片。');
+      } finally {
         status.classList.add('hidden');
-        
-        // 帶入辨識範例結果
-        document.getElementById('amount').value = 1580;
-        document.getElementById('category').value = '🛍️ 購物';
-        document.getElementById('merchant').value = '唐吉訶德 (ドン・キホーテ)';
-        document.getElementById('note').value = '日文品項：抹茶餅乾x2、龍角散x1';
-        
-        alert('✨ Gemini 3.8 AI 收據辨識完成！已填入金額與中文翻譯備註。');
-      }, 1500);
+        // Bug修復 2: 重置 input file 的 value，確保拍攝同一張照片時也能重複觸發 change 事件
+        e.target.value = '';
+      }
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
     }
   </script>
 </body>
